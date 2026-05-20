@@ -24,4 +24,12 @@ public class Movie {
     public int getId() {
         return id;
     }
+
+    public int getYearOfCreation() {
+        return yearOfCreation;
+    }
+
+    public static void resetIds() {
+        currentId = 1;
+    }
 }

@@ -1,6 +1,8 @@
 package ru.practicum.moviehub.http;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import ru.practicum.moviehub.api.ErrorResponse;
@@ -11,9 +13,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 
 class MoviesHandler extends BaseHttpHandler {
@@ -28,8 +28,12 @@ class MoviesHandler extends BaseHttpHandler {
     @Override
     public void handle(HttpExchange ex) throws IOException {
         String method = ex.getRequestMethod();
-        Gson gson = new Gson();
         String[] path = ex.getRequestURI().getPath().split("/");
+        Headers headers = ex.getRequestHeaders();
+        List<String> contentTypeRequest = headers.get("Content-type");
+
+        Map<String, String> params =
+                parseQuery(ex.getRequestURI().getQuery());
 
         switch (method) {
             case "GET":
@@ -52,19 +56,65 @@ class MoviesHandler extends BaseHttpHandler {
                     } else {
                         sendJson(ex, 404, gson.toJson("Фильм не найден"));
                     }
+                } else if (!params.isEmpty()) {
+                    if (params.containsKey("year")) {
+
+                        try {
+                            int year = Integer.parseInt(params.get("year"));
+                            List<Movie> movies =
+                                    moviesStore.getMoviesByYear(year);
+
+                            sendJson(ex, 200, gson.toJson(movies));
+                        } catch (NumberFormatException e) {
+                            sendJson(ex, 400,
+                                    gson.toJson(
+                                            "Некорректный параметр запроса — year"
+                                    ));
+                            return;
+                        }
+                    }
                 } else {
-                    sendJson(ex, 200, gson.toJson(moviesStore.getMovies()));
+                    sendJson(ex, 200, gson.toJson(moviesStore.getMovies().values()));
                 }
                 break;
             case "POST":
+                if (contentTypeRequest == null ||
+                        !contentTypeRequest.contains("application/json")) {
+
+                    sendJson(ex, 415,
+                            gson.toJson("Неверный Content-Type"));
+                    return;
+                }
+
                 Movie movie = postMovie(ex);
 
                 if (movie != null) {
                     sendJson(ex, 201, gson.toJson(movie));
                 }
                 break;
+            case "DELETE":
+
+                if (path.length == 2) {
+                    moviesStore.deleteAll();
+                    sendNoContent(ex);
+                } else {
+                    int filmId;
+                    try {
+                        filmId = Integer.parseInt(path[2]);
+                    } catch (NumberFormatException e) {
+                        sendJson(ex, 400, gson.toJson("Некорректный id фильма"));
+                        return;
+                    }
+                    boolean isDelete = moviesStore.deleteMovie(filmId);
+                    if (isDelete) {
+                        sendNoContent(ex);
+                    } else {
+                        sendJson(ex, 404, gson.toJson("Фильм не найден"));
+                    }
+                    break;
+                }
             default:
-                sendNoContent(ex);
+                sendJson(ex, 405, gson.toJson("Метод не поддерживается"));
         }
     }
 
@@ -75,8 +125,21 @@ class MoviesHandler extends BaseHttpHandler {
                 StandardCharsets.UTF_8
         );
 
-        CreateMovieRequest request =
-                gson.fromJson(body, CreateMovieRequest.class);
+        CreateMovieRequest request;
+
+        try {
+            request = gson.fromJson(
+                    body,
+                    CreateMovieRequest.class
+            );
+        } catch (JsonSyntaxException e) {
+            sendJson(
+                    ex,
+                    400,
+                    gson.toJson("Некорректный JSON")
+            );
+            return null;
+        }
 
         ErrorResponse error = validate(request);
 
@@ -115,7 +178,7 @@ class MoviesHandler extends BaseHttpHandler {
 
         if (request.getTitle() != null &&
                 request.getTitle().length() > 100) {
-            errors.add("длина названия > 100");
+            errors.add("длина названия не может быть больше 100 символов");
         }
 
         if (!errors.isEmpty()) {
@@ -125,6 +188,28 @@ class MoviesHandler extends BaseHttpHandler {
             );
         }
         return null;
+    }
+
+    private Map<String, String> parseQuery(String query) {
+
+        Map<String, String> result = new HashMap<>();
+
+        if (query == null || query.isBlank()) {
+            return result;
+        }
+
+        String[] pairs = query.split("&");
+
+        for (String pair : pairs) {
+
+            String[] keyValue = pair.split("=");
+
+            if (keyValue.length == 2) {
+                result.put(keyValue[0], keyValue[1]);
+            }
+        }
+
+        return result;
     }
 }
 
@@ -156,10 +241,6 @@ public class MoviesServer {
 
     public MoviesStore getMoviesStore() {
         return moviesStore;
-    }
-
-    public void setMoviesStore(MoviesStore moviesStore) {
-        this.moviesStore = moviesStore;
     }
 }
 
