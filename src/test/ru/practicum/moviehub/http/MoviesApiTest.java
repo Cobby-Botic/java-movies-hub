@@ -92,12 +92,11 @@ public class MoviesApiTest {
     @Test
     void addMovie_correctData() throws Exception {
         String json = """
-                {
-                  "title": "Matrix",
-                  "year": 1999
-                }
-                """;
-
+{
+  "title": "Matrix",
+  "year": 1999
+}
+""";
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
                 .header("Content-Type", "application/json")
@@ -123,11 +122,11 @@ public class MoviesApiTest {
     @Test
     void addMovie_WhenTitleIsEmpty_ReturnError() throws Exception {
         String json = """
-                {
-                  "title": "",
-                  "year": 1999
-                }
-                """;
+{
+  "title": "",
+  "year": 1999
+}
+""";
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
@@ -153,11 +152,11 @@ public class MoviesApiTest {
         String longTitle = "a".repeat(101);
 
         String json = """
-                {
-                  "title": "%s",
-                  "year": 1999
-                }
-                """.formatted(longTitle);
+{
+  "title": "%s",
+  "year": 1999
+}
+""".formatted(longTitle);
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
@@ -182,12 +181,13 @@ public class MoviesApiTest {
 
     @Test
     void addMovie_WhenYearIncorrect_ReturnError() throws Exception {
+
         String json = """
-                {
-                  "title": "Unnamed film",
-                  "year": 1887
-                }
-                """;
+{
+  "title": "Unnamed film",
+  "year": 1887
+}
+""";
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
@@ -211,11 +211,11 @@ public class MoviesApiTest {
     @Test
     void addMovie_whenContentType_isIncorrect_returnError() throws Exception {
         String json = """
-                {
-                  "title": "Matrix",
-                  "year": 1999
-                }
-                """;
+{
+  "title": "Matrix",
+  "year": 1999
+}
+""";
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
@@ -241,11 +241,11 @@ public class MoviesApiTest {
     @Test
     void addMovie_whenJsonIsIncorrect_returnError() throws Exception {
         String invalidJson = """
-                {
-                  "title": "Matrix",
-                  "year":
-                }
-                """;
+{
+  "title": "Matrix",
+  "year":
+}
+""";
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
