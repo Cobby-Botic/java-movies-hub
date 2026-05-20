@@ -18,8 +18,8 @@ import java.util.*;
 
 class MoviesHandler extends BaseHttpHandler {
 
-    Gson gson = new Gson();
-    private MoviesStore moviesStore;
+    private final Gson gson = new Gson();
+    private final MoviesStore moviesStore;
 
     public MoviesHandler(MoviesStore moviesStore) {
         this.moviesStore = moviesStore;
@@ -56,22 +56,20 @@ class MoviesHandler extends BaseHttpHandler {
                     } else {
                         sendJson(ex, 404, gson.toJson("Фильм не найден"));
                     }
-                } else if (!params.isEmpty()) {
-                    if (params.containsKey("year")) {
+                } else if (params.containsKey("year")) {
 
-                        try {
-                            int year = Integer.parseInt(params.get("year"));
-                            List<Movie> movies =
-                                    moviesStore.getMoviesByYear(year);
+                    try {
+                        int year = Integer.parseInt(params.get("year"));
+                        List<Movie> movies =
+                                moviesStore.getMoviesByYear(year);
 
-                            sendJson(ex, 200, gson.toJson(movies));
-                        } catch (NumberFormatException e) {
-                            sendJson(ex, 400,
-                                    gson.toJson(
-                                            "Некорректный параметр запроса — year"
-                                    ));
-                            return;
-                        }
+                        sendJson(ex, 200, gson.toJson(movies));
+                    } catch (NumberFormatException e) {
+                        sendJson(ex, 400,
+                                gson.toJson(
+                                        "Некорректный параметр запроса — year"
+                                ));
+                        return;
                     }
                 } else {
                     sendJson(ex, 200, gson.toJson(moviesStore.getMovies().values()));
@@ -97,6 +95,7 @@ class MoviesHandler extends BaseHttpHandler {
                 if (path.length == 2) {
                     moviesStore.deleteAll();
                     sendNoContent(ex);
+                    break;
                 } else {
                     int filmId;
                     try {
@@ -118,7 +117,7 @@ class MoviesHandler extends BaseHttpHandler {
         }
     }
 
-    public Movie postMovie(HttpExchange ex) throws IOException {
+    private Movie postMovie(HttpExchange ex) throws IOException {
 
         String body = new String(
                 ex.getRequestBody().readAllBytes(),
@@ -190,7 +189,7 @@ class MoviesHandler extends BaseHttpHandler {
         return null;
     }
 
-    private Map<String, String> parseQuery(String query) {
+    private static Map<String, String> parseQuery(String query) {
 
         Map<String, String> result = new HashMap<>();
 
@@ -215,8 +214,7 @@ class MoviesHandler extends BaseHttpHandler {
 
 public class MoviesServer {
 
-    private MoviesStore moviesStore;
-    private int port;
+    private final MoviesStore moviesStore;
     private final HttpServer server;
 
     public MoviesServer(MoviesStore moviesStore, int port) {
@@ -243,7 +241,6 @@ public class MoviesServer {
         return moviesStore;
     }
 }
-
 
 class CreateMovieRequest {
     private String title;
