@@ -25,12 +25,7 @@ public class MoviesStore {
     }
 
     public boolean deleteMovie(int idMovie) {
-        if (moviesStore.containsKey(idMovie)) {
-            moviesStore.remove(idMovie);
-            return true;
-        } else {
-            return false;
-        }
+        return moviesStore.remove(idMovie) != null;
     }
 
     public void deleteAll() {
