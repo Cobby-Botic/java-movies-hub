@@ -1,5 +1,6 @@
 package ru.practicum.moviehub.http;
 
+import com.google.gson.Gson;
 import org.junit.jupiter.api.*;
 import ru.practicum.moviehub.model.Movie;
 import ru.practicum.moviehub.store.MoviesStore;
@@ -18,6 +19,7 @@ public class MoviesApiTest {
     private static MoviesServer server;
     private static HttpClient client;
     private static MoviesStore moviesStore;
+    private static final Gson gson = new Gson();
 
     @BeforeAll
     static void beforeAll() {
@@ -85,16 +87,22 @@ public class MoviesApiTest {
 
         String body = resp.body();
 
-        assertTrue(body.contains("Matrix"));
-        assertTrue(body.contains("Resident Evil"));
+        Movie[] movies = gson.fromJson(body, Movie[].class);
+
+        assertEquals("Matrix", movies[0].getTitle());
+        assertEquals(1999, movies[0].getYearOfCreation());
     }
 
     @Test
     void addMovie_correctData() throws Exception {
-        String json = "{"
-                + "\"title\":\"Matrix\","
-                + "\"year\":1999"
-                + "}";
+        CreateMovieRequest request =
+                new CreateMovieRequest(
+                        "Matrix",
+                        1999
+                );
+
+
+        String json = gson.toJson(request);
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
                 .header("Content-Type", "application/json")
@@ -113,16 +121,24 @@ public class MoviesApiTest {
 
         String body = resp.body();
 
-        assertTrue(body.contains("Matrix"));
-        assertTrue(body.contains("1999"));
+        Movie movie = gson.fromJson(body, Movie.class);
+
+        assertEquals("Matrix", movie.getTitle());
+        assertEquals(1999, movie.getYearOfCreation());
     }
 
     @Test
     void addMovie_WhenTitleIsEmpty_ReturnError() throws Exception {
-        String json = "{"
-                + "\"title\":\"\","
-                + "\"year\":1999"
-                + "}";
+
+        CreateMovieRequest request =
+                new CreateMovieRequest(
+                        "",
+                        1999
+                );
+
+
+
+        String json = gson.toJson(request);
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
@@ -147,10 +163,13 @@ public class MoviesApiTest {
 
         String longTitle = "a".repeat(101);
 
-        String json = "{"
-                + "\"title\":\"" + longTitle + "\","
-                + "\"year\":1999"
-                + "}";
+        CreateMovieRequest request =
+                new CreateMovieRequest(
+                        longTitle,
+                        1999
+                );
+
+        String json = gson.toJson(request);
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
@@ -176,10 +195,13 @@ public class MoviesApiTest {
     @Test
     void addMovie_WhenYearIncorrect_ReturnError() throws Exception {
 
-        String json = "{"
-                + "\"title\":\"Unnamed film\","
-                + "\"year\":1887"
-                + "}";
+        CreateMovieRequest request =
+                new CreateMovieRequest(
+                        "Unnamed film",
+                        1887
+                );
+
+        String json = gson.toJson(request);
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
@@ -202,10 +224,14 @@ public class MoviesApiTest {
 
     @Test
     void addMovie_whenContentType_isIncorrect_returnError() throws Exception {
-        String json = "{"
-                + "\"title\":\"Matrix\","
-                + "\"year\":1999"
-                + "}";
+
+        CreateMovieRequest request =
+                new CreateMovieRequest(
+                        "Matrix",
+                        1999
+                );
+
+        String json = gson.toJson(request);
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
@@ -230,6 +256,7 @@ public class MoviesApiTest {
 
     @Test
     void addMovie_whenJsonIsIncorrect_returnError() throws Exception {
+
         String invalidJson = "{"
                 + "\"title\":\"Matrix\","
                 + "\"year\":"
@@ -277,7 +304,9 @@ public class MoviesApiTest {
 
         String body = resp.body();
 
-        assertTrue(body.contains("Matrix"));
+        Movie movies = gson.fromJson(body, Movie.class);
+
+        assertEquals("Matrix", movies.getTitle());
     }
 
     @Test
